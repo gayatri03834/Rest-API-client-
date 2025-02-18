@@ -1,0 +1,81 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+public class WeatherApiClient {
+
+    // Replace with your OpenWeatherMap API key
+    private static final String API_KEY = "YOUR_API_KEY";
+    private static final String BASE_URL = "http://api.openweathermap.org/data/2.5/weather";
+
+    /**
+     * Fetches weather data for the specified city.
+     *
+     * @param city the city to fetch weather data for
+     * @return a JSON object containing the weather data
+     * @throws Exception if an error occurs during the HTTP request
+     */
+    public static JSONObject fetchWeatherData(String city) throws Exception {
+        String urlString = BASE_URL + "?q=" + city + "&appid=" + API_KEY + "&units=metric";
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+
+        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        String inputLine;
+        StringBuilder content = new StringBuilder();
+
+        while ((inputLine = in.readLine()) != null) {
+            content.append(inputLine);
+        }
+
+        in.close();
+        conn.disconnect();
+
+        return new JSONObject(content.toString());
+    }
+
+    /**
+     * Parses and displays the weather data in a structured format.
+     *
+     * @param weatherData the JSON object containing the weather data
+     */
+    public static void displayWeatherData(JSONObject weatherData) {
+        String cityName = weatherData.getString("name");
+        JSONObject main = weatherData.getJSONObject("main");
+        double temperature = main.getDouble("temp");
+        int humidity = main.getInt("humidity");
+        JSONArray weatherArray = weatherData.getJSONArray("weather");
+        JSONObject weather = weatherArray.getJSONObject(0);
+        String description = weather.getString("description");
+
+        System.out.println("Weather Data for " + cityName + ":");
+        System.out.println("Temperature: " + temperature + "°C");
+        System.out.println("Humidity: " + humidity + "%");
+        System.out.println("Description: " + description);
+    }
+
+    /**
+     * Main method to run the weather API client.
+     *
+     * @param args command line arguments
+     */
+    public static void main(String[] args) {
+        if (args.length == 0) {
+            System.out.println("Please provide a city name as a command line argument.");
+            return;
+        }
+
+        String city = args[0];
+
+        try {
+            JSONObject weatherData = fetchWeatherData(city);
+            displayWeatherData(weatherData);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
